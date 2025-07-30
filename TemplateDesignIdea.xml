@@ -1,0 +1,39 @@
+<!-- Ignore Unknown Tag names such as Header  -->
+<!-- Output contents of tags at all times (ie Name, ',' in Field, etc.	-->
+<!-- Try to implement xml pathing for location field so things like root/Documents/Document[2]/Name work-->
+<Header>Name,Date,PageCount</Header>
+<Repeater special="_File">
+	<Repeater location="root/Documents/Document">
+		<Field special="_FileName"/>,<Field location="root/ClientInfo/ShippedDate"/>,<Field location="root/Documents/Document/PageCount"/>
+	</Repeater>
+</Repeater>
+<Space/>
+<Total>,,<Field location="root/Documents/Document/PageCount"/></Total>
+
+Example Input: textSchema.xml, C:\Dev\CSVReportGenerator\BasicTestFolder
+Expected Output:
+____________________________
+
+Name,Date,PageCount
+xmlFile1.xml,2025/01/01,17
+xmlFile1.xml,2025/01/02,30
+xmlFile2.xml,2025/02/01,5
+xmlFile2.xml,2025/02/04,2
+xmlFile3.xml,2025/02/07,11
+
+,,65
+______________________________
+Outputs '' if nothing found ie
+
+xmlFile1.xml,,17
+
+Main Tags - Repeater, Field, Total, Space
+Repeater - Attempts to repeat itself for every instance of special or location
+Field - Attempt to output itself based on contents of special or location
+Total - Attempt to total itself based on contents or location
+Space - Insert blank line intentionally
+
+location - XMLPath to use
+special - alternative to XMLPath for unique purposes defined by application
+	_File - used for looping on files
+	_FileName - used to retrieve filename specifically, could also be used like File.

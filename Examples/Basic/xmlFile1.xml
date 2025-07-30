@@ -1,0 +1,11 @@
+<root>
+	<ClientInfo>
+		<Name>ACME Inc.</Name>
+		<ShippedDate>January 5, 2025 11:30:00</ShippedDate>
+	</ClientInfo>
+	<Documents>
+		<Document number="1">
+			<PageCount>3</PageCount>
+		</Document>
+	</Documents>
+</root>

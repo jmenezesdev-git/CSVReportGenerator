@@ -1,0 +1,4 @@
+<Document>
+	<Header>Name,Date,PageCount</Header>
+	<Field special="_FileName"/>,<Field location="root/ClientInfo/ShippedDate"/>,<Field location="root/Documents/Document/PageCount"/>
+</Document>

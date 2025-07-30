@@ -1,0 +1,23 @@
+<root>
+	<ClientInfo>
+		<Name>Ionic Group Ltd.<Name>
+		<ShippedDate>2025-04-22 16:04:11</ShippedDate>
+	</ClientInfo>
+	<Documents>
+		<Document>
+			<PageCount>14</PageCount>
+		</Document>
+		<Document>
+			<PageCount>83</PageCount>
+		</Document>
+		<Document>
+			<PageCount>12</PageCount>
+		</Document>
+		<Document >
+			<PageCount>29</PageCount>
+		</Document>
+		<Document>
+			<PageCount>99</PageCount>
+		</Document>
+	</Documents>
+</root>
