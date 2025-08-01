@@ -21,7 +21,6 @@ static class ArgsUtilizer
             else
             {
                 Regex rx = new Regex(inputFileFilter);
-                //fileList.AddRange(Directory.GetFiles(filePath, inputFileFilter));
                 fileList.AddRange(Directory.GetFiles(filePath, inputFileFilter).Where(f => rx.IsMatch(Path.GetFileName(f))));
             }
         }

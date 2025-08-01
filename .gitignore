@@ -1,0 +1,9 @@
+CSVReportGenerator/[Bb]in/
+CSVReportGenerator/[Oo]bj/
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+logs/
