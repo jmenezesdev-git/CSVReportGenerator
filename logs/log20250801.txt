@@ -1,0 +1,8 @@
+2025-08-01 16:39:30.241 -04:00 [INF] Serilog initialized.
+2025-08-01 16:39:30.283 -04:00 [ERR] No output schema file provided.
+2025-08-01 16:42:12.389 -04:00 [INF] Serilog initialized.
+2025-08-01 16:42:12.429 -04:00 [INF] Parsing input arguments completed.
+2025-08-01 16:42:12.430 -04:00 [INF] File/Folder validation completed.
+2025-08-01 16:42:12.430 -04:00 [INF] Verifying existence of schema file: C:\Dev\CSVReportGenerator/Examples/Single/SingleTestSchema.xml
+2025-08-01 16:42:12.431 -04:00 [INF] Processing input path: C:\Dev\CSVReportGenerator/Examples/Single/xmlFile1.xml
+2025-08-01 16:42:12.432 -04:00 [INF] Reading XML-like file: C:\Dev\CSVReportGenerator/Examples/Single/xmlFile1.xml

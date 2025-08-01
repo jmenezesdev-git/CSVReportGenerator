@@ -1,0 +1,20 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET: Launch Console App",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "dotnet: build",
+            "program": "${workspaceFolder}/CSVReportGenerator/bin/Debug/net9.0/CSVReportGenerator.dll",
+            "args": ["-outputSchema", "${workspaceFolder}/Examples/Single/SingleTestSchema.xml", "-input", "${workspaceFolder}/Examples/Single/xmlFile1.xml"],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "integratedTerminal"
+            
+        }
+    ]
+}

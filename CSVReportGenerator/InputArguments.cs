@@ -9,7 +9,7 @@ public sealed class InputArguments
 
     public string OutputSchemaFile { get; set; }
     public string InputFileFilter { get; set; }
-    public List<string> InputFiles { get; set; }
+    public List<string> InputPathsAndFiles { get; set; }
 
     public static InputArguments Parse(string[] args)
     {
@@ -48,13 +48,13 @@ public sealed class InputArguments
             throw new FileNotFoundException($"Output schema file not found: {instance.OutputSchemaFile}");
         }
 
-        if (instance.InputFiles == null || instance.InputFiles.Count == 0)
+        if (instance.InputPathsAndFiles == null || instance.InputPathsAndFiles.Count == 0)
         {
             Serilog.Log.Information("No input files or folders specified. Using current directory.");
-            instance.InputFiles = [Directory.GetCurrentDirectory()];
+            instance.InputPathsAndFiles = [Directory.GetCurrentDirectory()];
         }
 
-        foreach (var path in instance.InputFiles)
+        foreach (var path in instance.InputPathsAndFiles)
         {
             if (!File.Exists(path) && !Directory.Exists(path))
             {
@@ -67,7 +67,7 @@ public sealed class InputArguments
     private static void ParseArgs(InputArguments instance,string[] args)
     {
         Serilog.Log.Debug("Parsing input arguments.");
-        instance.InputFiles = new List<string>();
+        instance.InputPathsAndFiles = new List<string>();
 
         // Parse arguments
         for (int i = 0; i < args.Length; i++)
@@ -87,7 +87,7 @@ public sealed class InputArguments
                 int j = i + 1;
                 while (j < args.Length && !args[j].StartsWith("-"))
                 {
-                    instance.InputFiles.Add(args[j]);
+                    instance.InputPathsAndFiles.Add(args[j]);
                     j++;
                 }
                 i = j - 1;
