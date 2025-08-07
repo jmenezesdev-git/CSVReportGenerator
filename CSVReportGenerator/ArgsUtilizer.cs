@@ -42,4 +42,18 @@ static class ArgsUtilizer
 
         return fileList;
     }
+
+    public static XMLFile LoadSchemaFile(string schemaFilePath)
+    {
+        Serilog.Log.Information($"Verifying existence of schema file: {schemaFilePath}");
+
+        if (!File.Exists(schemaFilePath))
+        {
+            Serilog.Log.Error($"Output schema file not found: {schemaFilePath}");
+            throw new FileNotFoundException("Output schema file not found.", schemaFilePath);
+        }
+
+        Serilog.Log.Information($"Output schema file loaded successfully: {schemaFilePath}");
+        return new XMLFile(Path.GetFileName(schemaFilePath), schemaFilePath);
+    }
 }

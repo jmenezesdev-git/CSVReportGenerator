@@ -12,7 +12,6 @@ using Serilog;
 /// the program defaults to the current directory.
 /// 
 /// TO DO:
-/// - Import Schema
 /// - Generate secondary data based on schema
 /// - generate csv based on schema
 /// - utilize sufficent abstraction to allow for substition of output formats such as JSON
@@ -20,6 +19,7 @@ using Serilog;
 /// DONE:
 /// - Implemented Logger
 /// - Argument parsing
+/// - Import Schema
 /// - Create basic test cases
 /// </summary>
 
@@ -49,14 +49,10 @@ class CSVReportGenerator
         {
 
             InputArguments inputArgs = InputArguments.Parse(args);
-            string outputSchemaFile = inputArgs.OutputSchemaFile;
-            Serilog.Log.Information($"Verifying existence of schema file: {outputSchemaFile}");
+            string outputSchemaFilePath = inputArgs.OutputSchemaFile;
 
-            if (!File.Exists(outputSchemaFile))
-            {
-                Serilog.Log.Error($"Output schema file not found: {outputSchemaFile}");
-                return;
-            }
+            XMLFile outputSchemaFile = ArgsUtilizer.LoadSchemaFile(outputSchemaFilePath);
+
             List<XMLFile> processedXmlFiles = new List<XMLFile>();
             foreach (var inputPath in inputArgs.InputPathsAndFiles)
             {
@@ -78,7 +74,8 @@ class CSVReportGenerator
             }
 
             Serilog.Log.Information("Completed reading XML files.");
-
+            ReportGenerator rg = ReportGenerator.Instance;
+            rg.CreateReport(processedXmlFiles, outputSchemaFile);
             // Next: Generate CSV based on the output schema
         }
         catch (Exception ex)
@@ -106,6 +103,10 @@ class CSVReportGenerator
         {
             Serilog.Log.Error(ex, "An argument error occurred. Please check your input arguments.");
         }
+        else if (ex is NotSupportedException)
+        {
+            Serilog.Log.Error(ex, "The specified output type is not supported. Please check your output type.");
+        }        
         else
         {
             Serilog.Log.Fatal(ex, "An unhandled error occurred. Terminating Program.");

@@ -7,3 +7,4 @@ CSVReportGenerator/[Oo]bj/
 *.o
 *.so
 logs/
+*.csv

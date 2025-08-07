@@ -1,6 +1,6 @@
 using System.Xml;
 
-class XMLFile
+public class XMLFile
 {
     private string FileName { get; set; }
     private string FilePath { get; set; }
