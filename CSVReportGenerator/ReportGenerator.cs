@@ -6,45 +6,59 @@ using System.Xml;
 public class RepeaterData
 {
     private string Path { get; set; }
-    private XmlNode? Node { get; set; }
-    private int iterationCount = 0;
+    private List<XmlNode>? Nodes { get; set; }
+    private int iterationCount = 1;
 
-    public RepeaterData(string name, XmlNode? node)
+    private int iterationMax = 0;
+
+    public RepeaterData(string name, XmlNode node, int fileLocalMax)
     {
         Path = name;
-        if (node != null)
+        iterationMax = fileLocalMax;
+
+        Nodes = new List<XmlNode>();
+        if (node.HasChildNodes)
         {
-            Node = node;
+            foreach (XmlNode childNode in node.ChildNodes)
+            {
+                Nodes.Add(childNode);
+            }
         }
         else
         {
-            Node = null;
         }
     }
 
-    public RepeaterData(string path)
+
+
+
+    public RepeaterData(string path, int fileCount)
     {
         Path = path;
-        Node = null;
-
+        Nodes = null;
+        iterationMax = fileCount;
     }
 
     public string GetPath()
     {
         return Path;
     }
-    public XmlNode? GetNode()
+    public List<XmlNode> GetNodes()
     {
-        return Node;
+        return Nodes;
     }
-    public int getIterationCount()
+    public int GetIterationCount()
     {
         return iterationCount;
     }
     public int Iterate()
     {
+        if (iterationCount >= iterationMax)
+        {
+            return -1;
+        }
         iterationCount++;
-        return iterationCount - 1;
+        return iterationCount;
     }
  }
 
@@ -76,19 +90,100 @@ public sealed class ReportGenerator
             HandleTag(node, processedXmlFiles);
         }
 
-        output.DumpToFile("outputBasic.csv");
+        output.DumpToFile("outputIntermediate.csv");
+    }
+
+    private int GetFirstNonNodeRepeaterIteration()
+    {
+        foreach (var repeater in repeaterStack)
+        {
+            if (repeater.GetNodes() == null)
+            {
+                return repeater.GetIterationCount();
+            }
+        }
+        return -1; // Meaningful value indicating no non-node repeater found
     }
 
     private string getFieldValue(string location, List<XMLFile> processedXmlFiles)
     {
-        foreach (var xmlFile in processedXmlFiles)
+        if (repeaterStack.Count > 0)
         {
-            var nodes = xmlFile.GetDocument().SelectNodes(location);
-            if (nodes != null && nodes.Count > 0)
+            int fileIterationIndex = -1;
+            if (repeaterStack.Peek().GetNodes() != null)
+            { //Checking if current repeater is on files or nodes
+
+                fileIterationIndex = GetFirstNonNodeRepeaterIteration();
+                if (repeaterStack.Peek().GetIterationCount() != -1)
+                {
+                    // Build a new location string by splicing in repeater iteration indices
+                    string updatedLocation = location;
+                    foreach (var repeater in repeaterStack)
+                    {
+                        string path = repeater.GetPath();
+                        int idx = updatedLocation.IndexOf(path, StringComparison.Ordinal);
+                        if (idx != -1)
+                        {
+                            // Find the end of the path in the location string
+                            int pathEnd = idx + path.Length;
+                            // Insert [iteration] after the path
+                            updatedLocation = updatedLocation.Substring(0, pathEnd) +
+                                $"[{repeater.GetIterationCount()}]" +
+                                updatedLocation.Substring(pathEnd);
+                        }
+                    }
+                    XmlNodeList? nodes = null;
+
+
+                    if (fileIterationIndex != -1)
+                    {
+                        nodes = processedXmlFiles[fileIterationIndex].GetDocument().SelectNodes(updatedLocation);
+                    }
+                    else
+                    {
+                        nodes = processedXmlFiles[0].GetDocument().SelectNodes(updatedLocation);
+                    }
+
+                    if (nodes != null && nodes.Count > 0)
+                    {
+
+                        string returnValue = "";
+                        if (updatedLocation == location)
+                        {
+                            returnValue = nodes[0].InnerText;
+                        } else {
+
+                            returnValue = nodes[0].InnerText; //We spliced the location, therefore nodes[0] is the correct value
+                        }
+                        return returnValue; // Return the first matching node's text
+                    }
+                    else
+                    {
+                        return "";
+                     }
+                }
+            }
+            else //Repeater it is on Files.
             {
-                return nodes[0].InnerText; // Return the first matching node's text
+                var nodes = processedXmlFiles[repeaterStack.Peek().GetIterationCount()].GetDocument().SelectNodes(location);
+                if (nodes != null && nodes.Count > 0)
+                {
+                    return nodes[0].InnerText; // Return the first matching node's text
+                }
             }
         }
+        else
+        {
+            foreach (var xmlFile in processedXmlFiles)
+            {
+                var nodes = xmlFile.GetDocument().SelectNodes(location);
+                if (nodes != null && nodes.Count > 0)
+                {
+                    return nodes[0].InnerText; // Return the first matching node's text
+                }
+            }
+        }
+        
         return ""; // Return empty if no match found
     }
 
@@ -109,15 +204,52 @@ public sealed class ReportGenerator
 
         if (node.HasChildNodes)
         {
-            foreach (XmlNode childNode in node.ChildNodes)
+            if (node.Name == "Repeater" && repeaterStack.Count > 0)
             {
-                Serilog.Log.Information($"Processing child node: {childNode.Name}");
-                // Here you would implement the logic to handle child nodes
-                // For example, you might want to recursively call a method to handle nested tags
-                HandleTag(childNode, processedXmlFiles);
+                var currentRepeater = repeaterStack.Peek();
+                do
+                {
+                    foreach (XmlNode childNode in node.ChildNodes)
+                    {
+                        Serilog.Log.Information($"Processing child of repeater node: {childNode.Name}");
+                        HandleTag(childNode, processedXmlFiles);
+                    }
+                    output.OnEnterNewLine();
+                    output.OnExitNewLine();
+                } while (currentRepeater.Iterate() != -1);
             }
+            else
+            {
+               foreach (XmlNode childNode in node.ChildNodes){
+                    Serilog.Log.Information($"Processing child node: {childNode.Name}");
+                    HandleTag(childNode, processedXmlFiles);
+                } 
+            }
+            
         }
         OnExitTag(node, processedXmlFiles);
+    }
+    
+    private int GetFileLocalMax(string location, List<XMLFile> processedXmlFiles)
+    {
+        int fileVal = 0;
+        if (repeaterStack.Count > 0)
+        {
+            foreach (RepeaterData repeater in repeaterStack)
+            {
+                if (repeater.GetNodes() == null) //This is our file Value
+                {
+                    fileVal = repeater.GetIterationCount();
+                }
+            }
+        }
+        
+        var nodes = processedXmlFiles[fileVal].GetDocument().SelectNodes(location);
+        if (nodes != null)
+        {
+            return nodes.Count;
+        }
+        return 0;
     }
 
     private void OnEnterTag(XmlNode node, List<XMLFile> processedXmlFiles)
@@ -128,6 +260,16 @@ public sealed class ReportGenerator
             if (node.Name == "Repeater")
             {
                 Serilog.Log.Information("Processing 'Repeater' tag logic here.");
+                if (node.Attributes != null && node.Attributes["location"] != null && node.Attributes["location"]?.Value != null)
+                {
+                    repeaterStack.Push(new RepeaterData(node.Attributes["location"].Value, node, GetFileLocalMax(node.Attributes["location"].Value, processedXmlFiles)));
+                }
+                else if (node.Attributes != null && node.Attributes["special"] != null && node.Attributes["special"]?.Value != null)
+                {
+                    repeaterStack.Push(new RepeaterData(node.Attributes["special"].Value, processedXmlFiles.Count));
+                }
+
+
             }
             else if (node.Name == "Field")
             {
