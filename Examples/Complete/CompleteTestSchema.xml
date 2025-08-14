@@ -2,9 +2,9 @@
 	<Header>Name,Date,PageCount</Header>
 	<Repeater special="_File">
 		<Repeater location="root/Documents/Document">
-			<Field special="_FileName"/>,<Field location="root/ClientInfo/ShippedDate[1]"/>,<Field location="root/Documents/Document/PageCount"/>
+			<Field special="_FileName"/>,<Field location="root/ClientInfo/ShippedDate[1]"/>,<Field location="root/Documents/Document/PageCount"/><NewLine/>
 		</Repeater>
 	</Repeater>
-	<Space/>
+	<NewLine/>
 	<Total>,,<Field location="root/Documents/Document/PageCount"/></Total>
 </Document>

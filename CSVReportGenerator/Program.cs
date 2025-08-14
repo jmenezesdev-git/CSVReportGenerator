@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Xml;
 using Serilog;
 
 /// <summary>
@@ -106,9 +107,14 @@ class CSVReportGenerator
         else if (ex is NotSupportedException)
         {
             Serilog.Log.Error(ex, "The specified output type is not supported. Please check your output type.");
-        }        
+        }
+        else if (ex is XmlException)
+        {
+            Serilog.Log.Error(ex, "There was an issue processing one of the XML files. Please verify that it is correctly formatted");
+        }
         else
         {
+            Serilog.Log.Debug("Error Type is: " + ex.GetType().ToString());
             Serilog.Log.Fatal(ex, "An unhandled error occurred. Terminating Program.");
         }
     }

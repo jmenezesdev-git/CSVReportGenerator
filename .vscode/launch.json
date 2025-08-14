@@ -12,7 +12,8 @@
             "program": "${workspaceFolder}/CSVReportGenerator/bin/Debug/net9.0/CSVReportGenerator.dll",
            // "args": ["-outputSchema", "${workspaceFolder}/Examples/Single/SingleTestSchema.xml", "-input", "${workspaceFolder}/Examples/Single/xmlFile1.xml"],
             // "args": ["-outputSchema", "${workspaceFolder}/Examples/Basic/BasicTestSchema.xml", "-input", "${workspaceFolder}/Examples/Basic/xmlFile1.xml"],
-            "args": ["-outputSchema", "${workspaceFolder}/Examples/Intermediate/IntermediateTestSchema.xml", "-input", "${workspaceFolder}/Examples/Intermediate/xmlFile.xml"],
+            // "args": ["-outputSchema", "${workspaceFolder}/Examples/Intermediate/IntermediateTestSchema.xml", "-input", "${workspaceFolder}/Examples/Intermediate/xmlFile.xml"],
+            "args": ["-outputSchema", "${workspaceFolder}/Examples/Advanced/AdvancedTestSchema.xml", "-input", "${workspaceFolder}/Examples/Advanced/testFolder"],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "integratedTerminal"
