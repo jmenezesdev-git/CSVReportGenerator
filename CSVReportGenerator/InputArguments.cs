@@ -7,9 +7,10 @@ public sealed class InputArguments
 
     public static InputArguments Instance => _instance;
 
-    public string OutputSchemaFile { get; set; }
-    public string InputFileFilter { get; set; }
-    public List<string> InputPathsAndFiles { get; set; }
+    public string outputSchemaFile { get; set; }
+    public string inputFileFilter { get; set; }
+    public List<string> inputPathsAndFiles { get; set; }
+    public string outputFilePath { get; set; } // Default output file path
 
     public static InputArguments Parse(string[] args)
     {
@@ -26,7 +27,7 @@ public sealed class InputArguments
         }
         catch (Exception ex)
         {
-            if (ex is FileNotFoundException || ex is UnauthorizedAccessException)
+            if (ex is FileNotFoundException || ex is UnauthorizedAccessException || ex is DirectoryNotFoundException)
             {
                 throw new FileNotFoundException("Argument Path Validation Failed", ex);
             }
@@ -42,19 +43,24 @@ public sealed class InputArguments
 
     private static void ValidateArgPaths(InputArguments instance)
     {
-        if (string.IsNullOrWhiteSpace(instance.OutputSchemaFile) || !File.Exists(instance.OutputSchemaFile))
+        if (string.IsNullOrWhiteSpace(instance.outputSchemaFile) || !File.Exists(instance.outputSchemaFile))
         {
-            Serilog.Log.Fatal($"Output schema file not found: {instance.OutputSchemaFile}");
-            throw new FileNotFoundException($"Output schema file not found: {instance.OutputSchemaFile}");
+            Serilog.Log.Fatal($"Output schema file not found: {instance.outputSchemaFile}");
+            throw new FileNotFoundException($"Output schema file not found: {instance.outputSchemaFile}");
         }
 
-        if (instance.InputPathsAndFiles == null || instance.InputPathsAndFiles.Count == 0)
+        if (!string.IsNullOrEmpty(instance.outputFilePath))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(instance.outputFilePath) ?? string.Empty);
+        }
+
+        if (instance.inputPathsAndFiles == null || instance.inputPathsAndFiles.Count == 0)
         {
             Serilog.Log.Information("No input files or folders specified. Using current directory.");
-            instance.InputPathsAndFiles = [Directory.GetCurrentDirectory()];
+            instance.inputPathsAndFiles = [Directory.GetCurrentDirectory()];
         }
 
-        foreach (var path in instance.InputPathsAndFiles)
+        foreach (var path in instance.inputPathsAndFiles)
         {
             if (!File.Exists(path) && !Directory.Exists(path))
             {
@@ -67,19 +73,19 @@ public sealed class InputArguments
     private static void ParseArgs(InputArguments instance,string[] args)
     {
         Serilog.Log.Debug("Parsing input arguments.");
-        instance.InputPathsAndFiles = new List<string>();
+        instance.inputPathsAndFiles = new List<string>();
 
         // Parse arguments
         for (int i = 0; i < args.Length; i++)
         {
             if (args[i] == "-outputSchema" && i + 1 < args.Length)
             {
-                instance.OutputSchemaFile = args[i + 1];
+                instance.outputSchemaFile = args[i + 1];
                 i++;
             }
             else if (args[i] == "-filter" && i + 1 < args.Length)
             {
-                instance.InputFileFilter = args[i + 1];
+                instance.inputFileFilter = args[i + 1];
                 i++;
             }
             else if (args[i] == "-input" && i + 1 < args.Length)
@@ -87,10 +93,15 @@ public sealed class InputArguments
                 int j = i + 1;
                 while (j < args.Length && !args[j].StartsWith("-"))
                 {
-                    instance.InputPathsAndFiles.Add(args[j]);
+                    instance.inputPathsAndFiles.Add(args[j]);
                     j++;
                 }
                 i = j - 1;
+            }
+            else if (args[i] == "-output" && i + 1 < args.Length)
+            {
+                instance.outputFilePath = args[i + 1];
+                i++;
             }
         }
 

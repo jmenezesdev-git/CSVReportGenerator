@@ -21,7 +21,7 @@ public sealed class ReportGenerator
     private IReportOutput? output;
 
     //Default type is CSV
-    public void CreateReport(List<XMLFile> processedXmlFiles, XMLFile schemaFile)
+    public void CreateReport(List<XMLFile> processedXmlFiles, XMLFile schemaFile, string outputPath = "")
     {
         Serilog.Log.Information("Generating default report type based on processed XML files and output schema.");
 
@@ -35,7 +35,8 @@ public sealed class ReportGenerator
             HandleTag(node, processedXmlFiles);
         }
 
-        output.DumpToFile("outputComplete.csv");
+
+        output.DumpToFile(outputPath);
         //Currently Hard Coded output file. Will implement dynamic file naming in the future.
     }
 
@@ -51,7 +52,7 @@ public sealed class ReportGenerator
         return -1; // Meaningful value indicating no non-node repeater found
     }
 /// <summary>
-/// Consider refactoring this. It may become unwieldy.
+/// Relocated processing into RepeaterData as the responsibility for field value extraction was already being split based on RepeaterType.
 /// </summary>
 /// <param name="location">XPath to target field</param>
 /// <param name="processedXmlFiles">List of target XML files</param>
@@ -60,231 +61,7 @@ public sealed class ReportGenerator
     {
         if (repeaterStack.Count > 0)
         {
-            int fileIterationIndex = -1;
-            if (repeaterStack.Peek().GetRepeaterType() == RepeaterType.Basic)
-            { //Checking if current repeater is on files or nodes
-
-                fileIterationIndex = GetFirstNonNodeRepeaterIteration();
-                if (repeaterStack.Peek().GetIterationCount() != -1)
-                {
-                    // Build a new location string by splicing in repeater iteration indices
-                    string updatedLocation = location;
-                    foreach (var repeater in repeaterStack)
-                    {
-                        string path = repeater.GetPath();
-                        int idx = updatedLocation.IndexOf(path, StringComparison.Ordinal);
-                        if (idx != -1)
-                        {
-                            // Find the end of the path in the location string
-                            int pathEnd = idx + path.Length;
-                            // Insert [iteration] after the path
-                            updatedLocation = updatedLocation.Substring(0, pathEnd) +
-                                $"[{repeater.GetIterationCount()}]" +
-                                updatedLocation.Substring(pathEnd);
-                        }
-                    }
-                    XmlNodeList? nodes = null;
-
-
-                    if (fileIterationIndex != -1)
-                    {
-                        nodes = processedXmlFiles[fileIterationIndex].GetDocument().SelectNodes(updatedLocation);
-                    }
-                    else
-                    {
-                        nodes = processedXmlFiles[0].GetDocument().SelectNodes(updatedLocation);
-                    }
-
-                    if (nodes != null && nodes.Count > 0)
-                    {
-
-                        string returnValue = "";
-                        if (updatedLocation == location)
-                        {
-                            returnValue = nodes[0].InnerText;
-                        }
-                        else
-                        {
-
-                            returnValue = nodes[0].InnerText; //We spliced the location, therefore nodes[0] is the correct value
-                        }
-                        return returnValue;
-                    }
-                    else
-                    {
-                        return "";
-                    }
-                }
-            }
-            else if (repeaterStack.Peek().GetRepeaterType() == RepeaterType.Total)
-            {
-                fileIterationIndex = GetFirstNonNodeRepeaterIteration();
-                if (repeaterStack.Peek().GetIterationCount() != -1)
-                {
-                    // Build a new location string by splicing in repeater iteration indices
-                    string updatedLocation = location;
-                    foreach (var repeater in repeaterStack)
-                    {
-                        if (repeater.GetRepeaterType() == RepeaterType.Total || repeater.GetRepeaterType() == RepeaterType.SpecialTotal)
-                        {
-                            continue; // Skip Total repeaters for location splicing
-                        }
-                        string path = repeater.GetPath();
-                        int idx = updatedLocation.IndexOf(path, StringComparison.Ordinal);
-                        if (idx != -1)
-                        {
-                            // Find the end of the path in the location string
-                            int pathEnd = idx + path.Length;
-                            // Insert [iteration] after the path
-                            updatedLocation = updatedLocation.Substring(0, pathEnd) +
-                                $"[{repeater.GetIterationCount()}]" +
-                                updatedLocation.Substring(pathEnd);
-                        }
-                    }
-                    XmlNodeList? nodes = null;
-
-
-                    if (fileIterationIndex != -1)
-                    {
-                        nodes = processedXmlFiles[fileIterationIndex].GetDocument().SelectNodes(updatedLocation);
-                    }
-                    else
-                    {
-                        nodes = processedXmlFiles[0].GetDocument().SelectNodes(updatedLocation);
-                    }
-
-                    if (nodes != null && nodes.Count > 0)
-                    {
-
-                        string returnValue = "";
-                        string returnProcess = "";
-                        double totalValue = 0;
-
-                        if (location.Contains(repeaterStack.Peek().GetPath()))
-                        {
-                            //Get All relevant Values   
-                            foreach (XmlNode node in nodes)
-                            {
-                                if (int.TryParse(node.InnerText, out int intOutputVal))
-                                {
-                                    totalValue += intOutputVal;
-                                    if (returnProcess.Length == 0)
-                                    {
-                                        returnProcess = "number";
-                                    }
-                                }
-                                else if (double.TryParse(node.InnerText, out double doubleOutputVal))
-                                {
-                                    totalValue += doubleOutputVal;
-                                    if (returnProcess.Length == 0)
-                                    {
-                                        returnProcess = "number";
-                                    }
-                                }
-                                else if (node.InnerText.Length > 0)
-                                {
-                                    returnValue = node.InnerText;
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"'{node.InnerText}' is neither an integer nor a double.");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            returnValue = nodes[0].InnerText; //We spliced the location, therefore nodes[0] is the correct value
-                        }
-                         if (returnProcess == "number")
-                        {
-                            if (totalValue % 1 == 0)
-                            {
-                                return totalValue.ToString("F0");
-                            }
-                            else
-                            {
-                                return totalValue.ToString();
-                            }
-                        }
-                        else
-                        {
-                            return returnValue;
-                        }
-                    }
-                    else
-                    {
-                        return "";
-                    }
-                }
-
-
-             } //Get Value from all lower structures in file
-            else if (repeaterStack.Peek().GetRepeaterType() == RepeaterType.SpecialTotal)
-            {
-
-                string returnProcess = "";
-                var returnValue = "";
-                double totalValue = 0;
-                foreach (var xmlFile in processedXmlFiles)
-                {
-                    var nodes = xmlFile.GetDocument().SelectNodes(location);
-                    if (nodes != null && nodes.Count > 0)
-                    {
-                        foreach (XmlNode node in nodes)
-                        {
-                            if (int.TryParse(node.InnerText, out int intOutputVal))
-                            {
-                                totalValue += intOutputVal;
-                                if (returnProcess.Length == 0)
-                                {
-                                    returnProcess = "number";
-                                }
-                            }
-                            else if (double.TryParse(node.InnerText, out double doubleOutputVal))
-                            {
-                                totalValue += doubleOutputVal;
-                                if (returnProcess.Length == 0)
-                                {
-                                    returnProcess = "number";
-                                }
-                            }
-                            else if (node.InnerText.Length > 0)
-                            {
-                                returnValue = node.InnerText;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"'{node.InnerText}' is neither an integer nor a double.");
-                            }
-                        }
-
-                    }
-                }
-                if (returnProcess == "number")
-                {
-                    if (totalValue % 1 == 0)
-                    {
-                        return totalValue.ToString("F0");
-                    }
-                    else
-                    {
-                        return totalValue.ToString();
-                    }
-                }
-                else
-                {
-                    return returnValue;
-                }
-
-            } //Get Value from across all files
-            else if (repeaterStack.Peek().GetRepeaterType() == RepeaterType.File)
-            {
-                var nodes = processedXmlFiles[repeaterStack.Peek().GetIterationCount()].GetDocument().SelectNodes(location);
-                if (nodes != null && nodes.Count > 0)
-                {
-                    return nodes[0].InnerText;
-                }
-            }
+            return repeaterStack.Peek().GetFieldValue(location, processedXmlFiles, repeaterStack); // Defaults to empty string
         }
         else
         {
@@ -298,7 +75,7 @@ public sealed class ReportGenerator
             }
         }
 
-        return ""; // Return empty if no match found
+        return ""; // Defaults to empty string
     }
 
     private string GetFileName(List<XMLFile> processedXmlFiles)  ///Need to process for file Repeater
@@ -374,7 +151,8 @@ public sealed class ReportGenerator
     }
 
 /// <summary>
-/// This method needs to be refactored. It is too long and will only get longer as the program gets more complicated
+/// This method will need to be refactored in the future. 
+/// It will only get longer as the program gets more complicated.
 /// </summary>
 /// <param name="node">Contains the node being processed</param>
 /// <param name="processedXmlFiles">Contains the list of xml files to process</param>

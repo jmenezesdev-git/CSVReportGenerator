@@ -74,8 +74,18 @@ class CSVReportOutput : IReportOutput
 
     public void DumpToFile(string filePath)
     {
-        System.IO.File.WriteAllLines(filePath, outputLines);
-        Serilog.Log.Information($"CSV report dumped to file: {filePath}");
+        if (string.IsNullOrEmpty(filePath))
+        {
+            string defaultFileName = "report.csv";
+            defaultFileName = DateTime.Now.ToString("yyyyMMdd_HHmmss") + "_" + defaultFileName;
+            System.IO.File.WriteAllLines(defaultFileName, outputLines);
+            Serilog.Log.Information($"CSV report dumped to file: {defaultFileName}");
+        }
+        else
+        {
+            System.IO.File.WriteAllLines(filePath, outputLines);
+            Serilog.Log.Information($"CSV report dumped to file: {filePath}");
+        }
     }
 
     private void EnsureOutputLinesAvailable()

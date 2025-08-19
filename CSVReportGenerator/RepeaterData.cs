@@ -15,6 +15,19 @@ public interface IRepeaterData
     int GetIterationCount();
     int Iterate();
     RepeaterType GetRepeaterType();
+    string GetFieldValue(string location, List<XMLFile> processedXmlFiles, Stack<IRepeaterData> otherRepeaterDataStack);
+
+    public static int GetFirstNonNodeRepeaterIteration(Stack<IRepeaterData> otherRepeaterDataStack)
+    {
+        foreach (var repeater in otherRepeaterDataStack)
+        {
+            if (repeater.GetRepeaterType() == RepeaterType.File)
+            {
+                return repeater.GetIterationCount();
+            }
+        }
+        return -1; // Meaningful value indicating no non-node repeater found
+    }
 }
 
 public class RepeaterDataFactory
@@ -97,7 +110,7 @@ public class TotalRepeaterData : IRepeaterData
     private string Path { get; set; }
     private RepeaterType repeaterType;
 
-    public TotalRepeaterData(string path) //For File Iterators
+    public TotalRepeaterData(string path)
     {
         Path = path;
         repeaterType = RepeaterType.Total;
@@ -129,6 +142,176 @@ public class TotalRepeaterData : IRepeaterData
     public RepeaterType GetRepeaterType()
     {
         return repeaterType;
+    }
+
+    public string GetFieldValue(string location, List<XMLFile> processedXmlFiles, Stack<IRepeaterData> otherRepeaterDataStack)
+    {
+
+        if (GetRepeaterType() == RepeaterType.Total)
+            {
+                int fileIterationIndex = -1;
+                fileIterationIndex = IRepeaterData.GetFirstNonNodeRepeaterIteration(otherRepeaterDataStack);
+                if (otherRepeaterDataStack.Peek().GetIterationCount() != -1)
+                {
+                    // Build a new location string by splicing in repeater iteration indices
+                    string updatedLocation = location;
+                    foreach (var repeater in otherRepeaterDataStack)
+                    {
+                        if (repeater.GetRepeaterType() == RepeaterType.Total || repeater.GetRepeaterType() == RepeaterType.SpecialTotal)
+                        {
+                            continue; // Skip Total repeaters for location splicing
+                        }
+                        string path = repeater.GetPath();
+                        int idx = updatedLocation.IndexOf(path, StringComparison.Ordinal);
+                        if (idx != -1)
+                        {
+                            // Find the end of the path in the location string
+                            int pathEnd = idx + path.Length;
+                            // Insert [iteration] after the path
+                            updatedLocation = updatedLocation.Substring(0, pathEnd) +
+                                $"[{repeater.GetIterationCount()}]" +
+                                updatedLocation.Substring(pathEnd);
+                        }
+                    }
+                    XmlNodeList? nodes = null;
+
+
+                    if (fileIterationIndex != -1)
+                    {
+                        nodes = processedXmlFiles[fileIterationIndex].GetDocument().SelectNodes(updatedLocation);
+                    }
+                    else
+                    {
+                        nodes = processedXmlFiles[0].GetDocument().SelectNodes(updatedLocation);
+                    }
+
+                    if (nodes != null && nodes.Count > 0)
+                    {
+
+                        string returnValue = "";
+                        string returnProcess = "";
+                        double totalValue = 0;
+
+                        if (location.Contains(otherRepeaterDataStack.Peek().GetPath()))
+                        {
+                            //Get All relevant Values   
+                            foreach (XmlNode node in nodes)
+                            {
+                                if (int.TryParse(node.InnerText, out int intOutputVal))
+                                {
+                                    totalValue += intOutputVal;
+                                    if (returnProcess.Length == 0)
+                                    {
+                                        returnProcess = "number";
+                                    }
+                                }
+                                else if (double.TryParse(node.InnerText, out double doubleOutputVal))
+                                {
+                                    totalValue += doubleOutputVal;
+                                    if (returnProcess.Length == 0)
+                                    {
+                                        returnProcess = "number";
+                                    }
+                                }
+                                else if (node.InnerText.Length > 0)
+                                {
+                                    returnValue = node.InnerText;
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"'{node.InnerText}' is neither an integer nor a double.");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            returnValue = nodes[0].InnerText; //We spliced the location, therefore nodes[0] is the correct value
+                        }
+                         if (returnProcess == "number")
+                        {
+                            if (totalValue % 1 == 0)
+                            {
+                                return totalValue.ToString("F0");
+                            }
+                            else
+                            {
+                                return totalValue.ToString();
+                            }
+                        }
+                        else
+                        {
+                            return returnValue;
+                        }
+                    }
+                    else
+                    {
+                        return "";
+                    }
+                }
+
+
+             } //Get Value from all lower structures in file
+            else if (GetRepeaterType() == RepeaterType.SpecialTotal)
+            {
+
+                string returnProcess = "";
+                var returnValue = "";
+                double totalValue = 0;
+                foreach (var xmlFile in processedXmlFiles)
+                {
+                    var nodes = xmlFile.GetDocument().SelectNodes(location);
+                    if (nodes != null && nodes.Count > 0)
+                    {
+                        foreach (XmlNode node in nodes)
+                        {
+                            if (int.TryParse(node.InnerText, out int intOutputVal))
+                            {
+                                totalValue += intOutputVal;
+                                if (returnProcess.Length == 0)
+                                {
+                                    returnProcess = "number";
+                                }
+                            }
+                            else if (double.TryParse(node.InnerText, out double doubleOutputVal))
+                            {
+                                totalValue += doubleOutputVal;
+                                if (returnProcess.Length == 0)
+                                {
+                                    returnProcess = "number";
+                                }
+                            }
+                            else if (node.InnerText.Length > 0)
+                            {
+                                returnValue = node.InnerText;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"'{node.InnerText}' is neither an integer nor a double.");
+                            }
+                        }
+
+                    }
+                }
+                if (returnProcess == "number")
+                {
+                    if (totalValue % 1 == 0)
+                    {
+                        return totalValue.ToString("F0");
+                    }
+                    else
+                    {
+                        return totalValue.ToString();
+                    }
+                }
+                else
+                {
+                    return returnValue;
+                }
+
+            } //Get Value from across all files
+
+
+        return "";
     }
 }
 
@@ -167,10 +350,20 @@ public class FileRepeaterData : IRepeaterData
         iterationCount++;
         return iterationCount;
     }
-    
+
     public RepeaterType GetRepeaterType()
     {
         return RepeaterType.File;
+    }
+
+    public string GetFieldValue(string location, List<XMLFile> processedXmlFiles, Stack<IRepeaterData> otherRepeaterDataStack)
+    {
+        var nodes = processedXmlFiles[otherRepeaterDataStack.Peek().GetIterationCount()].GetDocument().SelectNodes(location);
+        if (nodes != null && nodes.Count > 0)
+        {
+            return nodes[0].InnerText;
+        }
+        return "";
     }
 }
 
@@ -222,9 +415,66 @@ public class BasicRepeaterData : IRepeaterData
         iterationCount++;
         return iterationCount;
     }
-    
+
     public RepeaterType GetRepeaterType()
     {
         return RepeaterType.Basic;
+    }
+
+    public string GetFieldValue(string location, List<XMLFile> processedXmlFiles, Stack<IRepeaterData> otherRepeaterDataList)
+    {
+        int fileIterationIndex = -1;
+        fileIterationIndex = IRepeaterData.GetFirstNonNodeRepeaterIteration(otherRepeaterDataList);
+        if (otherRepeaterDataList.Peek().GetIterationCount() != -1)
+        {
+            // Build a new location string by splicing in repeater iteration indices
+            string updatedLocation = location;
+            foreach (var repeater in otherRepeaterDataList)
+            {
+                string path = repeater.GetPath();
+                int idx = updatedLocation.IndexOf(path, StringComparison.Ordinal);
+                if (idx != -1)
+                {
+                    // Find the end of the path in the location string
+                    int pathEnd = idx + path.Length;
+                    // Insert [iteration] after the path
+                    updatedLocation = updatedLocation.Substring(0, pathEnd) +
+                        $"[{repeater.GetIterationCount()}]" +
+                        updatedLocation.Substring(pathEnd);
+                }
+            }
+            XmlNodeList? nodes = null;
+
+
+            if (fileIterationIndex != -1)
+            {
+                nodes = processedXmlFiles[fileIterationIndex].GetDocument().SelectNodes(updatedLocation);
+            }
+            else
+            {
+                nodes = processedXmlFiles[0].GetDocument().SelectNodes(updatedLocation);
+            }
+
+            if (nodes != null && nodes.Count > 0)
+            {
+
+                string returnValue = "";
+                if (updatedLocation == location)
+                {
+                    returnValue = nodes[0].InnerText;
+                }
+                else
+                {
+
+                    returnValue = nodes[0].InnerText; //We spliced the location, therefore nodes[0] is the correct value
+                }
+                return returnValue;
+            }
+            else
+            {
+                return "";
+            }
+        }
+        return "";
     }
 }

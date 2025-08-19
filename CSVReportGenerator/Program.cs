@@ -50,15 +50,15 @@ class CSVReportGenerator
         {
 
             InputArguments inputArgs = InputArguments.Parse(args);
-            string outputSchemaFilePath = inputArgs.OutputSchemaFile;
+            string outputSchemaFilePath = inputArgs.outputSchemaFile;
 
             XMLFile outputSchemaFile = ArgsUtilizer.LoadSchemaFile(outputSchemaFilePath);
 
             List<XMLFile> processedXmlFiles = new List<XMLFile>();
-            foreach (var inputPath in inputArgs.InputPathsAndFiles)
+            foreach (var inputPath in inputArgs.inputPathsAndFiles)
             {
                 Serilog.Log.Information($"Processing input path: {inputPath}");
-                List<string> xmlFiles = ArgsUtilizer.GenerateFileListFromInputArg(inputPath, inputArgs.InputFileFilter);
+                List<string> xmlFiles = ArgsUtilizer.GenerateFileListFromInputArg(inputPath, inputArgs.inputFileFilter);
 
                 if (xmlFiles.Count == 0)
                 {
@@ -76,7 +76,7 @@ class CSVReportGenerator
 
             Serilog.Log.Information("Completed reading XML files.");
             ReportGenerator rg = ReportGenerator.Instance;
-            rg.CreateReport(processedXmlFiles, outputSchemaFile);
+            rg.CreateReport(processedXmlFiles, outputSchemaFile, inputArgs.outputFilePath);
             // Next: Generate CSV based on the output schema
         }
         catch (Exception ex)
