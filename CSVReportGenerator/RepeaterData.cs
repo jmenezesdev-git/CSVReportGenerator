@@ -73,6 +73,10 @@ public class RepeaterDataFactory
         {
             return new TotalRepeaterData(path);
         }
+        else if (outputType.Equals(RepeaterType.SpecialTotal))
+        {
+            return new TotalRepeaterData(path, RepeaterType.SpecialTotal);
+        }
         if (outputType.Equals(RepeaterType.File))
         {
             throw new NotSupportedException("File repeater data requires a file count.");

@@ -4,7 +4,8 @@
 		<Repeater location="root/Documents/Document">
 			<Field special="_FileName"/>,<Field location="root/ClientInfo/ShippedDate[1]"/>,<Field location="root/Documents/Document/PageCount"/><NewLine/>
 		</Repeater>
+		<Total>,,<Field location="root/Documents/Document/PageCount"/></Total>
+		<NewLine/><NewLine/>
 	</Repeater>
-	<NewLine/>
 	<Total>,,<Field location="root/Documents/Document/PageCount"/></Total>
 </Document>

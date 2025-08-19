@@ -13,7 +13,8 @@
            // "args": ["-outputSchema", "${workspaceFolder}/Examples/Single/SingleTestSchema.xml", "-input", "${workspaceFolder}/Examples/Single/xmlFile1.xml"],
             // "args": ["-outputSchema", "${workspaceFolder}/Examples/Basic/BasicTestSchema.xml", "-input", "${workspaceFolder}/Examples/Basic/xmlFile1.xml"],
             // "args": ["-outputSchema", "${workspaceFolder}/Examples/Intermediate/IntermediateTestSchema.xml", "-input", "${workspaceFolder}/Examples/Intermediate/xmlFile.xml"],
-            "args": ["-outputSchema", "${workspaceFolder}/Examples/Advanced/AdvancedTestSchema.xml", "-input", "${workspaceFolder}/Examples/Advanced/testFolder"],
+            // "args": ["-outputSchema", "${workspaceFolder}/Examples/Advanced/AdvancedTestSchema.xml", "-input", "${workspaceFolder}/Examples/Advanced/testFolder"],
+            "args": ["-outputSchema", "${workspaceFolder}/Examples/Complete/CompleteTestSchema.xml", "-input", "${workspaceFolder}/Examples/Complete/testFolder", "${workspaceFolder}/Examples/Complete/testFolder2"],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "integratedTerminal"

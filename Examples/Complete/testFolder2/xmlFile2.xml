@@ -8,13 +8,12 @@
 			<PageCount>50</PageCount>
 		</Document>
 		<Document number="2">
-			<PageCount>7</PageCount>
+			<PageCount/>
 		</Document>
 		<Document number="3">
 			<PageCount>320</PageCount>
 		</Document>
 		<Document number="4">
-			<PageCount>77</PageCount>
 		</Document>
 	</Documents>
 </root>

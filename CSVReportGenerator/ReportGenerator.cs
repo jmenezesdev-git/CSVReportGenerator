@@ -35,7 +35,7 @@ public sealed class ReportGenerator
             HandleTag(node, processedXmlFiles);
         }
 
-        output.DumpToFile("outputAdvanced.csv");
+        output.DumpToFile("outputComplete.csv");
         //Currently Hard Coded output file. Will implement dynamic file naming in the future.
     }
 
@@ -116,7 +116,168 @@ public sealed class ReportGenerator
                     }
                 }
             }
-            else //Repeater it is on Files.
+            else if (repeaterStack.Peek().GetRepeaterType() == RepeaterType.Total)
+            {
+                fileIterationIndex = GetFirstNonNodeRepeaterIteration();
+                if (repeaterStack.Peek().GetIterationCount() != -1)
+                {
+                    // Build a new location string by splicing in repeater iteration indices
+                    string updatedLocation = location;
+                    foreach (var repeater in repeaterStack)
+                    {
+                        if (repeater.GetRepeaterType() == RepeaterType.Total || repeater.GetRepeaterType() == RepeaterType.SpecialTotal)
+                        {
+                            continue; // Skip Total repeaters for location splicing
+                        }
+                        string path = repeater.GetPath();
+                        int idx = updatedLocation.IndexOf(path, StringComparison.Ordinal);
+                        if (idx != -1)
+                        {
+                            // Find the end of the path in the location string
+                            int pathEnd = idx + path.Length;
+                            // Insert [iteration] after the path
+                            updatedLocation = updatedLocation.Substring(0, pathEnd) +
+                                $"[{repeater.GetIterationCount()}]" +
+                                updatedLocation.Substring(pathEnd);
+                        }
+                    }
+                    XmlNodeList? nodes = null;
+
+
+                    if (fileIterationIndex != -1)
+                    {
+                        nodes = processedXmlFiles[fileIterationIndex].GetDocument().SelectNodes(updatedLocation);
+                    }
+                    else
+                    {
+                        nodes = processedXmlFiles[0].GetDocument().SelectNodes(updatedLocation);
+                    }
+
+                    if (nodes != null && nodes.Count > 0)
+                    {
+
+                        string returnValue = "";
+                        string returnProcess = "";
+                        double totalValue = 0;
+
+                        if (location.Contains(repeaterStack.Peek().GetPath()))
+                        {
+                            //Get All relevant Values   
+                            foreach (XmlNode node in nodes)
+                            {
+                                if (int.TryParse(node.InnerText, out int intOutputVal))
+                                {
+                                    totalValue += intOutputVal;
+                                    if (returnProcess.Length == 0)
+                                    {
+                                        returnProcess = "number";
+                                    }
+                                }
+                                else if (double.TryParse(node.InnerText, out double doubleOutputVal))
+                                {
+                                    totalValue += doubleOutputVal;
+                                    if (returnProcess.Length == 0)
+                                    {
+                                        returnProcess = "number";
+                                    }
+                                }
+                                else if (node.InnerText.Length > 0)
+                                {
+                                    returnValue = node.InnerText;
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"'{node.InnerText}' is neither an integer nor a double.");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            returnValue = nodes[0].InnerText; //We spliced the location, therefore nodes[0] is the correct value
+                        }
+                         if (returnProcess == "number")
+                        {
+                            if (totalValue % 1 == 0)
+                            {
+                                return totalValue.ToString("F0");
+                            }
+                            else
+                            {
+                                return totalValue.ToString();
+                            }
+                        }
+                        else
+                        {
+                            return returnValue;
+                        }
+                    }
+                    else
+                    {
+                        return "";
+                    }
+                }
+
+
+             } //Get Value from all lower structures in file
+            else if (repeaterStack.Peek().GetRepeaterType() == RepeaterType.SpecialTotal)
+            {
+
+                string returnProcess = "";
+                var returnValue = "";
+                double totalValue = 0;
+                foreach (var xmlFile in processedXmlFiles)
+                {
+                    var nodes = xmlFile.GetDocument().SelectNodes(location);
+                    if (nodes != null && nodes.Count > 0)
+                    {
+                        foreach (XmlNode node in nodes)
+                        {
+                            if (int.TryParse(node.InnerText, out int intOutputVal))
+                            {
+                                totalValue += intOutputVal;
+                                if (returnProcess.Length == 0)
+                                {
+                                    returnProcess = "number";
+                                }
+                            }
+                            else if (double.TryParse(node.InnerText, out double doubleOutputVal))
+                            {
+                                totalValue += doubleOutputVal;
+                                if (returnProcess.Length == 0)
+                                {
+                                    returnProcess = "number";
+                                }
+                            }
+                            else if (node.InnerText.Length > 0)
+                            {
+                                returnValue = node.InnerText;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"'{node.InnerText}' is neither an integer nor a double.");
+                            }
+                        }
+
+                    }
+                }
+                if (returnProcess == "number")
+                {
+                    if (totalValue % 1 == 0)
+                    {
+                        return totalValue.ToString("F0");
+                    }
+                    else
+                    {
+                        return totalValue.ToString();
+                    }
+                }
+                else
+                {
+                    return returnValue;
+                }
+
+            } //Get Value from across all files
+            else if (repeaterStack.Peek().GetRepeaterType() == RepeaterType.File)
             {
                 var nodes = processedXmlFiles[repeaterStack.Peek().GetIterationCount()].GetDocument().SelectNodes(location);
                 if (nodes != null && nodes.Count > 0)
@@ -345,6 +506,7 @@ public sealed class ReportGenerator
             }
             else if (node.Name == "Total")
             {
+                repeaterStack.Pop();
                 output.OnExitTotal();
             }
             else if (node.Name == "NewLine")
