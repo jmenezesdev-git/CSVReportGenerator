@@ -8,3 +8,5 @@ CSVReportGenerator/[Oo]bj/
 *.so
 logs/
 *.csv
+UnitTests/[Bb]in/
+UnitTests/[Oo]bj/

@@ -1,6 +1,0 @@
-<Document>
-	<Header>Name,Date,PageCount</Header>
-	<Repeater location="root/Documents/Document">
-		<Field special="_FileName"/>,<Field location="root/ClientInfo/ShippedDate"/>,<Field location="root/Documents/Document/PageCount"/>
-	</Repeater>
-</Document>
