@@ -1,5 +1,37 @@
 
-public sealed class InputArguments
+using System.Runtime.CompilerServices;
+
+public interface IInputArguments
+{
+    string outputSchemaFile { get; }
+    string inputFileFilter { get; }
+    List<string> inputPathsAndFiles { get; }
+    string outputFilePath { get; }
+    void Parse(string[] args);
+
+}
+
+public class InputArgument
+{
+    private readonly IInputArguments _inputArguments;
+
+    public InputArgument(IInputArguments inputArguments)
+    {
+        _inputArguments = inputArguments;
+    }
+
+    public void Parse(string[] args)
+    {
+        _inputArguments.Parse(args);
+    }
+
+    public string OutputSchemaFile => _inputArguments.outputSchemaFile;
+    public string InputFileFilter => _inputArguments.inputFileFilter;
+    public List<string> InputPathsAndFiles => _inputArguments.inputPathsAndFiles;
+    public string OutputFilePath => _inputArguments.outputFilePath;
+}
+
+public sealed class InputArguments : IInputArguments
 {
     private static readonly InputArguments _instance = new InputArguments();
 
@@ -12,7 +44,14 @@ public sealed class InputArguments
     public List<string> inputPathsAndFiles { get; set; }
     public string outputFilePath { get; set; } // Default output file path
 
-    public static InputArguments Parse(string[] args)
+    private void ResetForTesting()
+    {
+        outputSchemaFile = null;
+        inputFileFilter = null;
+        inputPathsAndFiles = new List<string>();
+        outputFilePath = null;
+    }
+    public void Parse(string[] args)
     {
         Serilog.Log.Debug("Parsing input arguments.");
         var instance = Instance;
@@ -38,7 +77,7 @@ public sealed class InputArguments
         }
         Serilog.Log.Information("File/Folder validation completed.");
 
-        return instance;
+        //return instance;
     }
 
     private static void ValidateArgPaths(InputArguments instance)
@@ -70,7 +109,7 @@ public sealed class InputArguments
         }
     }
 
-    private static void ParseArgs(InputArguments instance,string[] args)
+    private static void ParseArgs(InputArguments instance, string[] args)
     {
         Serilog.Log.Debug("Parsing input arguments.");
         instance.inputPathsAndFiles = new List<string>();

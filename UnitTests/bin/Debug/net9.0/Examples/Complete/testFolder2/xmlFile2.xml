@@ -1,0 +1,19 @@
+<root>
+	<ClientInfo>
+		<Name>Knockers and Knicknacks</Name>
+		<ShippedDate>19/01/2025</ShippedDate>
+	</ClientInfo>
+	<Documents>
+		<Document number="1">
+			<PageCount>50</PageCount>
+		</Document>
+		<Document number="2">
+			<PageCount/>
+		</Document>
+		<Document number="3">
+			<PageCount>320</PageCount>
+		</Document>
+		<Document number="4">
+		</Document>
+	</Documents>
+</root>
